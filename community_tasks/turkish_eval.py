@@ -1,6 +1,6 @@
-from lighteval.src.lighteval.metrics.metrics import LoglikelihoodAcc
-from lighteval.src.lighteval.tasks.lighteval_task import LightevalTaskConfig
-from lighteval.src.lighteval.tasks.requests import Doc
+from lighteval.metrics.metrics import LoglikelihoodAcc
+from lighteval.tasks.lighteval_task import LightevalTaskConfig
+from lighteval.tasks.requests import Doc
 
 def prompt_fn_turkish_eval_task(line, task_name: str = None):
     """
