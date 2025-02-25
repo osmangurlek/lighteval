@@ -1,28 +1,16 @@
 from lighteval.metrics.metrics import LoglikelihoodAcc
 from lighteval.tasks.lighteval_task import LightevalTaskConfig
 from lighteval.tasks.requests import Doc
+# Özel kayıt için alternatif fonksiyon denemesi
+try:
+    from lighteval.tasks.registry import register_task
+except ImportError:
+    register_task = None
 
 def prompt_fn_turkish_eval_task(line, task_name: str = None):
     """
-    Prepares a question and answer set in Turkish from the Turkish Evaluation DatasetArgs:
-        line (dict): A dictionary with required keys:
-            - 'query' (str): The main question string.
-            - 'choices' (list of str): A list containing exactly five answer options.
-            - 'answer_str' (str): A single character from "A" to "E" representing the correct answer.
-        task_name (str, optional): An optional string specifying the evaluation task name.
-
-    Returns:
-        Doc: A structured object for LightEval containing:
-            - task_name (str): The task name, if provided.
-            - query (str): Formatted question with embedded answer choices.
-            - choices (list of str): List of option identifiers ["A", "B", "C", "D", "E"].
-            - gold_index (int): Index of the correct answer within the 'choices' list.
-
-    Raises:
-        ValueError: If the 'choices' list does not contain exactly five items,
-                    or if 'answer_str' is not one of ["A", "B", "C", "D", "E"].
+    Türkçe Değerlendirme Görevi için soru ve cevap seti hazırlar.
     """
-    
     query_template = """Lütfen aşağıdaki metne dayanarak soruyu yanıtlayın. Yalnızca verilen seçeneklerden doğru olanı (A, B, C, D veya E) belirtin; ek açıklama yapmayın.
     Metin: {narrative}
     Soru: {question}
@@ -34,10 +22,11 @@ def prompt_fn_turkish_eval_task(line, task_name: str = None):
     D) {choice_d}
     E) {choice_e}
     
-    Cevap:
-    """
+    Cevabınız:"""
 
     options = line["choices"]
+    if len(options) != 5:
+        raise ValueError("Seçenek listesi tam olarak 5 öğe içermelidir.")
 
     query = query_template.format(
         narrative=line["narrative"],
@@ -50,6 +39,9 @@ def prompt_fn_turkish_eval_task(line, task_name: str = None):
     )
 
     choices = ["A", "B", "C", "D", "E"]
+    if line["answer_choice"] not in choices:
+        raise ValueError("answer_choice değeri geçerli değil; A, B, C, D veya E olmalıdır.")
+
     return Doc(
         task_name=task_name,
         query=query,
@@ -58,8 +50,21 @@ def prompt_fn_turkish_eval_task(line, task_name: str = None):
     )
     
 task = LightevalTaskConfig(
-    name="turkish_eval_complex_ales",
+    name="turkish_eval",
     prompt_function=prompt_fn_turkish_eval_task,
+    suite=["community"],
     hf_repo="metunlp/complex-ales",
+    hf_subset="default",
+    hf_avail_splits=[],
+    evaluation_splits=[],
+    few_shots_split=None,
+    few_shots_select=None,
     metric=[LoglikelihoodAcc],
 )
+
+# Eğer register_task mevcutsa kullanmayı deneyin, yoksa dosyayı import etmek özel görevi otomatik kaydediyor olabilir.
+if register_task is not None:
+    register_task(task)
+
+# Artık lighteval accelerate komutuyla görevinizi çağırabilirsiniz:
+# lighteval accelerate "pretrained=gpt2" "community|turkish_eval|0|0"
