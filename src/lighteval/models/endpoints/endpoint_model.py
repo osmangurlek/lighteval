@@ -410,7 +410,7 @@ class InferenceEndpointModel(LightevalModel):
             grammar=grammar,
         )
 
-        generated_text = self.async_client.text_generation(prompt=context)
+        generated_text = self.async_client.text_generation(prompt=context, max_new_tokens=max_tokens, details=True, decoder_input_details=True, grammar=grammar, stop=stop_tokens)
 
         return generated_text
 
